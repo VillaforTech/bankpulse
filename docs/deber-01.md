@@ -16,7 +16,7 @@ API → PostgreSQL con outbox transaccional → Redpanda → analítica independ
 - **B-K2:** suma de la diferencia absoluta entre total y cuotas autorizadas de los cierres de esa ventana, separada por moneda. Meta 0.
 - **B-K3:** importe autorizado en sesiones OPEN con más de 120 segundos desde su creación, por moneda. Meta 0.
 
-Los contratos detallados están en [eventos](events-deber-01.md) y [KPIs](kpis-deber-01.md). El oráculo independiente está en `tests/kpis`; la implementación está en `services/business-analytics`. No se agregan monedas incompatibles.
+Los contratos detallados están en [eventos](events-deber-01.md) y [KPIs](kpis-deber-01.md). El oráculo independiente está en `tests/kpis`; la implementación está en `services/business-analytics`. No se agregan monedas incompatibles. La ventana de cierres es `[now - 900 s, now)`, con pruebas de ambos extremos tanto en la proyección como en el oráculo. El historial de snapshots está acotado y permite recuperar cursores antiguos desde una proyección completa.
 
 ```mermaid
 flowchart LR
@@ -62,6 +62,7 @@ export ANALYTICS_COVERAGE_FROM="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 docker compose up -d --build --wait --wait-timeout 300
 docker compose -f compose.yaml -f compose.analytics.yaml up -d --build --wait business-analytics
 python3 scripts/analytics-integration.py
+bash scripts/smoke-v2.sh
 docker compose -f observability/compose.yaml up -d --build prometheus grafana grafana-live-adapter
 npm install --prefix /tmp/live-browser playwright@1.51.1
 /tmp/live-browser/node_modules/.bin/playwright install --with-deps chromium

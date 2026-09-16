@@ -3,6 +3,7 @@ services:
   business-analytics:
     build: ./services/business-analytics
     environment:
+      ANALYTICS_SNAPSHOT_RETENTION: ${ANALYTICS_SNAPSHOT_RETENTION:-10000}
       KAFKA_BOOTSTRAP: redpanda:9092
       ANALYTICS_DB: /data/analytics.sqlite
       ANALYTICS_TICK_SECONDS: "0.2"

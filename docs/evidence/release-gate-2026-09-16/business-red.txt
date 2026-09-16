@@ -1,0 +1,9 @@
+[readiness] esperando /health/social-split en http://localhost:8080 ...
+[readiness] OK
+FALSO VERDE DETECTADO: HTTP 200 + status COMPLETED + descuadre de 10.00 unidades
+[PASS] caso_sano_60_40_de_100: cierre sano quedo COMPLETED como se esperaba
+[FAIL] caso_falso_verde_60_30_de_100: la API dejo cerrar (HTTP 200, status=COMPLETED) una sesion con descuadre de 10.00; la capacidad protegida NO se respeto
+[PASS] caso_sin_consentimiento: cierre sin consentimiento total fue rechazado (HTTP 422)
+[PASS] caso_cierre_repetido: segundo cierre no produjo efectos adicionales (HTTP=200, sigue COMPLETED, participantes=2)
+RESUMEN NEGOCIO: caso_sano_60_40_de_100=PASS | caso_falso_verde_60_30_de_100=FAIL | caso_sin_consentimiento=PASS | caso_cierre_repetido=PASS
+RESULTADO: FAIL (al menos un escenario de negocio viola la capacidad protegida)
