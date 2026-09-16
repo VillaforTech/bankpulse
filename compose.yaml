@@ -159,6 +159,7 @@ services:
   social-split-api:
     build: ./services/social-split-api
     environment:
+      KAFKA_BOOTSTRAP: redpanda:9092
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-bankpulse_domains}?currentSchema=social_split
       SPRING_DATASOURCE_USERNAME: split_owner
       SPRING_DATASOURCE_PASSWORD: ${SPLIT_DB_PASSWORD:-split_local}
