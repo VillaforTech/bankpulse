@@ -32,9 +32,9 @@ El runner no acepta resiliencia SKIPPED: devuelve 0 solo cuando todos los escena
 
 ## Orden para integrar
 
-1. #10 ya contiene Social Split y la base de #9 en `main`.
-2. #8 aporta analítica y #11 incorpora esa integración más Grafana Live.
-3. #7 incorpora esas dependencias y el harness completo; revisar los PRs en ese orden para distinguir cada contribución.
+1. #10, #8, #11 y #7 ya están integrados en `main`: eventos, analítica, Grafana Live y harness.
+2. Para reproducir, usar un Codespace nuevo y ejecutar `bash scripts/acceptance/clean-environment.sh`.
+3. El harness incluye tres caídas deterministas del consumidor alrededor de persistencia/ACK con Kafka real; sus resultados quedan en `acceptance/component-resilience.json`.
 4. El harness demuestra sano → mutación con salud UP → test rojo → corrección verde. El [PR #13](https://github.com/VillaforTech/bankpulse/pull/13), cerrado sin fusionar, conserva además el bloqueo real en GitHub y la corrección verde; ver [evidencia](deber-01.md#ciclo-de-bloqueo-y-recuperación-observado).
 5. Obtener revisión elegible y reproducir en Codespace limpio. La regla autorizada el 15 de septiembre exige una aprobación de otro colaborador con escritura; CODEOWNERS solo sugiere revisor. Se conservan todos los checks, la invalidación de aprobaciones y enforcement al administrador. Un PR propio no se autoaprueba.
 
