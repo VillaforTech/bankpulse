@@ -22,15 +22,15 @@ Envelope:
 ```
 
 ```json
-{"eventId":"e2","eventType":"ParticipantAdded","schemaVersion":1,"aggregateId":"split-1","aggregateVersion":2,"occurredAt":"2026-09-15T12:00:01Z","payload":{"participantId":"p1","memberId":"member-1","shareAmount":60}}
+{"eventId":"e2","eventType":"ParticipantAdded","schemaVersion":1,"aggregateId":"split-1","aggregateVersion":2,"occurredAt":"2026-09-15T12:00:01Z","payload":{"sessionId":"split-1","participantId":"p1","memberId":"member-1","shareAmount":60}}
 ```
 
 ```json
-{"eventId":"e3","eventType":"ParticipantAuthorized","schemaVersion":1,"aggregateId":"split-1","aggregateVersion":3,"occurredAt":"2026-09-15T12:00:02Z","payload":{"participantId":"p1","paymentReference":"present"}}
+{"eventId":"e3","eventType":"ParticipantAuthorized","schemaVersion":1,"aggregateId":"split-1","aggregateVersion":3,"occurredAt":"2026-09-15T12:00:02Z","payload":{"sessionId":"split-1","participantId":"p1","paymentReference":"present"}}
 ```
 
 ```json
-{"eventId":"e4","eventType":"SplitCompleted","schemaVersion":1,"aggregateId":"split-1","aggregateVersion":4,"occurredAt":"2026-09-15T12:00:03Z","payload":{"closedAt":"2026-09-15T12:00:03Z"}}
+{"eventId":"e4","eventType":"SplitCompleted","schemaVersion":1,"aggregateId":"split-1","aggregateVersion":4,"occurredAt":"2026-09-15T12:00:03Z","payload":{"sessionId":"split-1","closedAt":"2026-09-15T12:00:03Z"}}
 ```
 
 No event contains `valid` or `ok`. `paymentReference` is the contract field carrying the literal presence marker `present`; real payment references and personal data are not sent. The consumer reconstructs shares, total, authorizations and reference presence from the facts and derives KPI validity itself.

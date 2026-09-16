@@ -39,4 +39,19 @@ class SocialSplitOutboxRelayTest {
     assertEquals("split-1", calls.get(0)[1]);
     assertEquals(calls.get(0)[2], calls.get(1)[2]);
   }
+
+  @SuppressWarnings("unchecked")
+  @Test void publishesThePersistedCompletionInstantAndSessionId() throws Exception {
+    SocialSplitOutboxEvent event = new SocialSplitOutboxEvent("event-2", "SplitCompleted", "split-1", 4, Instant.parse("2026-09-15T12:00:03Z"), "{\"sessionId\":\"split-1\",\"closedAt\":\"2026-09-15T12:00:03Z\"}");
+    SocialSplitOutboxRepository repository = mock(SocialSplitOutboxRepository.class);
+    when(repository.findTop50ByPublishedFalseOrderByOccurredAtAsc()).thenReturn(List.of(event));
+    List<Object[]> calls = new ArrayList<>();
+    KafkaOperations<String,String> kafka = (KafkaOperations<String,String>) java.lang.reflect.Proxy.newProxyInstance(KafkaOperations.class.getClassLoader(), new Class[]{KafkaOperations.class}, (proxy, method, args) -> { if(method.getName().equals("send")){calls.add(args);return CompletableFuture.completedFuture(null);} return null; });
+    new SocialSplitOutboxRelay(repository, kafka, new ObjectMapper(), "topic").publishPending();
+    assertEquals(1, calls.size());
+    String envelope = (String) calls.get(0)[2];
+    org.junit.jupiter.api.Assertions.assertTrue(envelope.contains("\"sessionId\":\"split-1\""));
+    org.junit.jupiter.api.Assertions.assertTrue(envelope.contains("\"occurredAt\":\"2026-09-15T12:00:03Z\""));
+    org.junit.jupiter.api.Assertions.assertTrue(envelope.contains("\"closedAt\":\"2026-09-15T12:00:03Z\""));
+  }
 }
