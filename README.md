@@ -90,7 +90,7 @@ For a disposable hosted environment, follow the [Codespaces guide](docs/CODESPAC
 
 ## Quality and release controls
 
-Pull requests pass through architecture, unit, integration and release checks. The integration suite builds the actual stack, checks health and readiness, exercises idempotency and observability, and preserves evidence before teardown. When the team acceptance harness is present, skipped resilience checks or API-only latency measurements fail the release.
+Pull requests pass through architecture, unit, integration and release checks. The integration suite builds the actual stack, checks health and readiness, exercises idempotency and observability, and preserves evidence before teardown. The team acceptance harness is mandatory: missing scripts, skipped resilience checks or API-only latency measurements fail the release.
 
 The target business flow also proves a deliberate **false green**: infrastructure can remain healthy while a business invariant is broken. The required gate must block that revision, then pass only after the business correction. This gives the project a stronger signal than a conventional “containers are up” demo.
 

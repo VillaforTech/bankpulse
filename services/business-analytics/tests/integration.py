@@ -144,7 +144,8 @@ def run(docker, project="bankpulse-analytics-test", url="http://127.0.0.1:18080"
 
     send(healthy)
     duplicate = until(lambda value: value["diagnostics"]["duplicates"] == len(healthy))
-    assert duplicate["kpis"]["counts"]["sessions"] == 1
+    assert duplicate["kpis"] == good["kpis"], "duplicate delivery changed business totals"
+    assert duplicate["dataRevision"] == good["dataRevision"]
     record("duplicate delivery has no double count", duplicate["diagnostics"])
 
     deadline_start = time.time()

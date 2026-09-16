@@ -24,7 +24,7 @@ Los repos comparten puertos publicados: usar Codespaces distintos o detener una 
 
 ## Gate y entrega de #5
 
-El CI ejecuta unidades, compilación, despliegue, smoke, observabilidad y conserva artifacts antes de detener. Si se incluye `scripts/acceptance/`, `scripts/team-acceptance.sh` se vuelve obligatorio dentro del check de integración y por tanto de `Release gate`. **Error, SKIPPED y medición parcial bloquean.** Sin ese directorio, el verde solo acredita la base, no la aceptación completa del producto.
+El CI ejecuta unidades, compilación, despliegue, smoke, observabilidad y conserva artifacts antes de detener. `scripts/team-acceptance.sh` es obligatorio dentro del check de integración y por tanto de `Release gate`. **Archivo ausente, error, SKIPPED y medición parcial bloquean.** Ya no se permite el modo de base sin aceptación.
 
 El benchmark de #5 conserva `--base-url` y `--out`; debe producir `measurementTarget=grafana-render`, requested/observed=100, lost=0, errors=[], p95Ms recalculable y 100 samples con correlationId único, rendered=true, correct=true, quality=FRESH, revision>0, latencyMs finito. El oráculo verifica los valores y la identidad de los tres paneles antes de escribir cada sample. El checker no convierte un booleano declarado en prueba visual: adjuntar captura y mediciones crudas del navegador. El runner actual usa Chromium, contrasta el evento con el outbox y verifica los tres paneles. El oráculo de B-K3 usa las sesiones OPEN y sus cuotas autorizadas; el consumidor de producción sigue siendo independiente de esa base.
 
