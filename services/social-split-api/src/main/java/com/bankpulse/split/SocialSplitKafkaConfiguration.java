@@ -23,6 +23,7 @@ public class SocialSplitKafkaConfiguration {
     properties.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
     properties.put(ProducerConfig.ACKS_CONFIG, "all");
     properties.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, true);
+    properties.put(ProducerConfig.MAX_BLOCK_MS_CONFIG, 500);
     return new DefaultKafkaProducerFactory<>(properties);
   }
 
