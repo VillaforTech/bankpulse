@@ -11,3 +11,6 @@ python3 scripts/acceptance/latency_benchmark.py --base-url "$base" --out artifac
 python3 scripts/check-panel-evidence.py artifacts/acceptance/latency.json
 # Missing, skipped or failed scenarios block the release gate.
 python3 scripts/acceptance/resilience_checks.py --base-url "$base" | tee artifacts/acceptance/resilience.log
+
+node scripts/acceptance/deadline-panel.cjs | tee artifacts/acceptance/deadline.log
+python3 scripts/acceptance/false_green.py | tee artifacts/acceptance/false-green.log

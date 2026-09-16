@@ -24,12 +24,8 @@ Forma esperada de una "sesion" (dict):
         ],
     }
 
-NOTA IMPORTANTE (alcance): el modelo real de `SplitSession` (ver
-services/social-split-api) NO persiste hoy un timestamp de cierre
-(`closedAt`); ese campo es una hipotesis de trabajo para este calculador de
-KPIs (lo aportaria el evento/outbox de cierre que crea el issue #1/#4). Estas
-funciones son deliberadamente puras y agnosticas de esa fuente: aceptan el
-campo como entrada y no adivinan de donde salio.
+El contrato persistido y los eventos incluyen closedAt; este oraculo recibe
+los mismos campos como entrada, sin leer la implementacion de analitica.
 
 ADVERTENCIA DE ALCANCE PARA B-K2 y B-K3: ambos KPIs expresan EXPOSICION o
 COMPROMISOS de una demo academica (montos descuadrados o comprometidos en

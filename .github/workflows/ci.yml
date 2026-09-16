@@ -68,6 +68,8 @@ jobs:
             cd services/business-analytics
             pip install -r requirements-test.txt
             python -m pytest tests -q
+            cd ../..
+            python -m pytest tests/kpis -q
           else
             echo 'Analytics not included in this foundation branch; full acceptance remains pending.'
           fi

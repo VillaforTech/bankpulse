@@ -4,6 +4,7 @@ const { chromium } = require('playwright');
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
 const path = require('node:path');
+const os = require('node:os');
 const { randomUUID } = require('node:crypto');
 const base = process.argv[2] || 'http://localhost:8080';
 const output = process.argv[3] || 'artifacts/acceptance/latency.json';
@@ -18,6 +19,7 @@ function completionEvent(id) {
 (async () => {
   fs.mkdirSync(path.dirname(output), {recursive:true});
   const report = {measurementTarget:'grafana-render', requested:100, observed:0, lost:0, errors:[], samples:[],
+    environment:{node:process.version,cpus:os.cpus().length,memoryBytes:os.totalmem(),platform:os.platform(),sha:execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim(),concurrency:1},
     method:'100 sequential complete sessions; timer before close request through DOM; ACTUAL normalized to FRESH; nearest-rank p95; failures retained at >= 10000ms'};
   const browser = await chromium.launch({headless:true});
   const page = await browser.newPage({locale:'en-US',viewport:{width:1440,height:1100}});
@@ -66,7 +68,7 @@ function completionEvent(id) {
   } catch(e) {report.errors.push({error:String(e)});throw e;}
   finally {
     const sorted=report.samples.map(s=>s.latencyMs).sort((a,b)=>a-b);
-    report.p50Ms=sorted[49]??null; report.p95Ms=sorted[94]??null;
+    report.maximumMs=sorted.at(-1)??null; report.p50Ms=sorted[49]??null; report.p95Ms=sorted[94]??null;
     report.lost=100-report.observed;
     fs.writeFileSync(output,JSON.stringify(report,null,2)+'\n');
     await browser.close();

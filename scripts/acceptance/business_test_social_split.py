@@ -317,11 +317,12 @@ def escenario_cierre_repetido(base_url: str, resumen: ResumenNegocio) -> None:
         participantes_tras_segundo_cierre = estado_tras_segundo_cierre.get("participants", [])
 
         sigue_completed = estado_tras_segundo_cierre.get("status") == "COMPLETED"
-        sin_participantes_extra = len(participantes_tras_segundo_cierre) == len(participantes_tras_primer_cierre)
+        sin_participantes_extra = participantes_tras_segundo_cierre == participantes_tras_primer_cierre
+        sin_nuevo_cierre = estado_tras_segundo_cierre.get("closedAt") == estado_tras_primer_cierre.get("closedAt") and estado_tras_segundo_cierre.get("aggregateVersion") == estado_tras_primer_cierre.get("aggregateVersion")
         # Un segundo cierre "sin efecto" puede responder 2xx (idempotente/no-op)
         # o 4xx (rechazado por ya estar cerrado); ambos son aceptables siempre
         # que el estado no cambie ni se dupliquen participantes.
-        if (200 <= status_2 < 300 or 400 <= status_2 < 500) and sigue_completed and sin_participantes_extra:
+        if (200 <= status_2 < 300 or 400 <= status_2 < 500) and sigue_completed and sin_participantes_extra and sin_nuevo_cierre:
             resumen.agregar(
                 nombre,
                 True,

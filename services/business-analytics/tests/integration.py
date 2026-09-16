@@ -186,6 +186,9 @@ def run(docker, project="bankpulse-analytics-test", url="http://127.0.0.1:18080"
 
     revision = overdue["revision"]
     compose("restart", "analytics")
+    # Docker can reassign an ephemeral published port after restart.
+    address = compose("port", "analytics", "8000").stdout.strip()
+    url = "http://127.0.0.1:" + address.rsplit(":", 1)[1]
     restarted = until(
         lambda value: value.get("valid") and value["revision"] > revision, timeout=30
     )
