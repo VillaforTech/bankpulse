@@ -305,3 +305,11 @@ def test_b_k1_con_cohorte_mixta_calcula_porcentaje_correcto():
     b_k1 = calcular_b_k1([sana, descuadrada, otra_sana], AHORA)
 
     assert b_k1 == pytest.approx(200.0 / 3.0)
+
+
+@pytest.mark.parametrize("age,included", [(-0.001, False), (0, False), (0.001, True), (900, True), (900.001, False)])
+def test_half_open_window_boundaries(age, included):
+    session = _sesion(100, status="COMPLETED", cerrada_hace_s=age,
+                      participantes=[_participante(60), _participante(30)])
+    assert calcular_b_k1([session], AHORA) == (0.0 if included else "SIN MUESTRA")
+    assert calcular_b_k2([session], AHORA) == ({"USD": Decimal("10")} if included else {})

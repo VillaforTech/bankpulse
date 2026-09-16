@@ -5,6 +5,7 @@ Disposable Compose only. Builds a separate image from a temporary source copy,
 restores the original image in finally, and retains all historical test data.
 This proves mutation detection, not a GitHub PR review/branch-protection decision.
 """
+import argparse
 import difflib
 import json
 import shutil
@@ -26,8 +27,8 @@ def execute(args, **kw):
     return subprocess.run(args,check=True,text=True,timeout=300,**kw)
 
 
-def business(name, expected):
-    result=subprocess.run(TEST,text=True,capture_output=True,timeout=120)
+def business(name, expected, base):
+    result=subprocess.run(TEST+['--base-url', base],text=True,capture_output=True,timeout=120)
     (OUT/(name+'.log')).write_text(result.stdout+result.stderr)
     assert result.returncode==expected, (name,result.returncode,result.stdout,result.stderr)
     if expected==1:
@@ -39,9 +40,12 @@ def business(name, expected):
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--base-url", default="http://localhost:8080")
+    base = parser.parse_args().base_url.rstrip("/")
     OUT.mkdir(parents=True,exist_ok=True)
     evidence={'scope':'temporary real service mutation; unchanged business test; original data retained'}
-    evidence['baseExit']=business('base',0)
+    evidence['baseExit']=business('base',0,base)
     tag='bankpulse-acceptance-mutant:'+uuid.uuid4().hex
     with tempfile.TemporaryDirectory(prefix='bankpulse-mutant-') as temporary:
         copy=Path(temporary)/'service'
@@ -58,11 +62,11 @@ def main():
             execute(['docker','build','-t',tag,str(copy)])
             execute(BASE+['-f',str(override),'up','-d','--no-deps','--no-build','--wait','social-split-api'])
             execute(BASE+['restart','console'])
-            esperar_readiness('http://localhost:8080')
-            health_status, evidence['healthBefore']=_http('GET','http://localhost:8080/health/social-split')
+            esperar_readiness(base)
+            health_status, evidence['healthBefore']=_http('GET',base+'/health/social-split')
             assert health_status==200
-            evidence['mutantExit']=business('mutant',1)
-            health_status, evidence['healthAfter']=_http('GET','http://localhost:8080/health/social-split')
+            evidence['mutantExit']=business('mutant',1,base)
+            health_status, evidence['healthAfter']=_http('GET',base+'/health/social-split')
             assert health_status==200
             assert evidence['healthBefore']['status']==evidence['healthAfter']['status']=='UP'
             observed=until(lambda s:s['valid'] and s['kpis']['B-K1']['value']<100 and float(s['kpis']['B-K2']['value'].get('USD',0))>=10)
@@ -72,8 +76,8 @@ def main():
             execute(BASE+['up','-d','--no-deps','--no-build','--force-recreate','--wait','social-split-api'])
             execute(BASE+['restart','console'])
             subprocess.run(['docker','image','rm',tag],check=False,timeout=30)
-        esperar_readiness('http://localhost:8080')
-        evidence['correctedExit']=business('corrected',0)
+        esperar_readiness(base)
+        evidence['correctedExit']=business('corrected',0,base)
         final=until(lambda s:s['valid'] and float(s['kpis']['B-K2']['value'].get('USD',0))>=10)
         evidence['historicalBreachRetained']=final['kpis']
         (OUT/'result.json').write_text(json.dumps(evidence,indent=2)+'\n')

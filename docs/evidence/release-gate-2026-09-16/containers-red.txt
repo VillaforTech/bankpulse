@@ -1,0 +1,15 @@
+NAME                                 IMAGE                              COMMAND                  SERVICE               CREATED              STATUS                          PORTS
+bankpulse-v2-audit-api-1             bankpulse-v2-audit-api             "java -XX:MaxRAMPerc…"   audit-api             2 minutes ago        Up 2 minutes (healthy)          8082/tcp
+bankpulse-v2-business-analytics-1    bankpulse-v2-business-analytics    "uvicorn analytics.a…"   business-analytics    About a minute ago   Up About a minute (healthy)     8000/tcp
+bankpulse-v2-business-topics-1       redpandadata/redpanda:v24.3.18     "/bin/sh -ec 'rpk to…"   business-topics       2 minutes ago        Exited (0) About a minute ago   
+bankpulse-v2-console-1               bankpulse-v2-console               "/docker-entrypoint.…"   console               2 minutes ago        Up About a minute               80/tcp, 0.0.0.0:8080->8080/tcp, [::]:8080->8080/tcp
+bankpulse-v2-events-api-1            bankpulse-v2-events-api            "java -XX:MaxRAMPerc…"   events-api            2 minutes ago        Up 2 minutes (healthy)          
+bankpulse-v2-experiences-api-1       bankpulse-v2-experiences-api       "java -XX:MaxRAMPerc…"   experiences-api       2 minutes ago        Up 2 minutes (healthy)          
+bankpulse-v2-mariadb-1               mariadb:11.4                       "docker-entrypoint.s…"   mariadb               2 minutes ago        Up 2 minutes (healthy)          127.0.0.1:3306->3306/tcp
+bankpulse-v2-mongo-1                 mongo:8.0                          "docker-entrypoint.s…"   mongo                 2 minutes ago        Up 2 minutes (healthy)          127.0.0.1:27017->27017/tcp
+bankpulse-v2-payments-api-1          bankpulse-v2-payments-api          "java -XX:MaxRAMPerc…"   payments-api          2 minutes ago        Up About a minute (healthy)     8081/tcp
+bankpulse-v2-postgres-1              postgres:16-alpine                 "docker-entrypoint.s…"   postgres              2 minutes ago        Up 2 minutes (healthy)          127.0.0.1:5432->5432/tcp
+bankpulse-v2-redis-1                 redis:7.4-alpine                   "docker-entrypoint.s…"   redis                 2 minutes ago        Up 2 minutes (healthy)          6379/tcp
+bankpulse-v2-redpanda-1              redpandadata/redpanda:v24.3.18     "/entrypoint.sh redp…"   redpanda              2 minutes ago        Up 2 minutes (healthy)          8081-8082/tcp, 9092/tcp, 9644/tcp
+bankpulse-v2-social-split-api-1      bankpulse-v2-social-split-api      "java -XX:MaxRAMPerc…"   social-split-api      2 minutes ago        Up 2 minutes (healthy)          
+bankpulse-v2-travel-benefits-api-1   bankpulse-v2-travel-benefits-api   "java -XX:MaxRAMPerc…"   travel-benefits-api   2 minutes ago        Up 2 minutes (healthy)          

@@ -1,12 +1,12 @@
 # BankPulse — aceptación de Social Split y observabilidad
 
-PR [#7](https://github.com/VillaforTech/bankpulse/pull/7), relacionado con [#5](https://github.com/VillaforTech/bankpulse/issues/5). Harness inicial: Daniel Martínez (`Dmt-155lbs`). Integración y ampliación: Roberto Villafuerte con asistencia de Codex. La aprobación, reproducción por otro integrante y entrega al aula son pasos separados.
+PR [#7](https://github.com/VillaforTech/bankpulse/pull/7), relacionado con [#5](https://github.com/VillaforTech/bankpulse/issues/5). Harness inicial: Daniel Martínez (`Dmt-155lbs`). Integración y ampliación: Roberto Villafuerte con asistencia de Codex. La aprobación y el envío al aula son pasos separados de la validación técnica.
 
 ## Capacidad y riesgo
 
 Un cierre exige participantes, cuotas positivas cuya suma exacta sea el total, autorización de todos y referencias no vacías. El cierre es idempotente y conserva `closedAt`. Un cierre de 100 con cuotas autorizadas 60+30 debe devolver 4xx y seguir OPEN. Salud técnica UP no demuestra este contrato. Los 10 de diferencia son exposición simulada; no hubo cobro ni pérdida financiera real.
 
-El defecto histórico ya está corregido en `main` mediante #10. El harness elimina **solo en una copia temporal** la validación de suma, construye una imagen separada y verifica que la misma prueba de negocio falla con la API sana. La regresión no modifica el árbol fuente ni se incorpora a `main`.
+El defecto histórico ya está corregido en `main` mediante #10. El harness elimina **solo en una copia temporal** la validación de suma, construye una imagen separada y verifica que la misma prueba de negocio falla con la API sana. La regresión del harness no modifica el árbol fuente ni se incorpora a `main`. Además, el PR de demostración #13 conserva una revisión defectuosa y su corrección para mostrar el bloqueo real de GitHub.
 
 ## Arquitectura y KPIs
 
@@ -22,7 +22,9 @@ Los contratos detallados están en [eventos](events-deber-01.md) y [KPIs](kpis-d
 flowchart LR
   PR[Pull request] --> A[Contrato de arquitectura]
   A --> U[Pruebas unitarias y oráculo]
-  A --> I[API + eventos + panel + aceptación]
+  A --> D[Build y despliegue Docker]
+  D --> S[Smoke técnico: servicios UP]
+  S --> I[Business Test + eventos + panel + aceptación]
   U --> G[Release gate]
   I --> G
   G -->|todos pasan| R[Revisión humana requerida]
@@ -72,11 +74,29 @@ Abrir Grafana en `http://localhost:3000/d/bankpulse-deber-01`; las credenciales 
 
 CI ejecuta el mismo runner, guarda SHA probado, run ID y logs antes del teardown. La prueba de resiliencia crea un proyecto Compose con nombre único y puerto dinámico y elimina únicamente sus propios volúmenes al terminar.
 
-## Estado y pendientes externos
+## Ciclo de bloqueo y recuperación observado
 
 La [corrida integrada 35137501553](https://github.com/VillaforTech/bankpulse/actions/runs/35137501553), sobre el commit `2d68301`, pasó los cuatro checks. Acreditó recuperación de broker/consumidor, duplicados/desorden, vencimiento real de 120 s con reacción en pantalla de 214 ms y mutación con salidas 0 → 1 → 0 mientras la salud seguía UP. El cierre inválido se conservó (B-K2 USD 10). Para el benchmark vigente, que contrasta los tres paneles en cada muestra, consultar la última corrida del [PR #7](https://github.com/VillaforTech/bankpulse/pull/7/checks). `integration-evidence` contiene las muestras, capturas y SHA probado; cada resultado corresponde exclusivamente a esa revisión.
 
-Para completar toda la entrega aún se necesita observar/documentar un PR de demostración bloqueado por los checks obligatorios (sin fusionar la regresión), revisión humana, reproducción por otro integrante y envío al aula con recibo. El resumen del aula asigna 5/10 puntos al gate; el reparto restante debe cotejarse con el handout vigente. No se declara aquí una entrega realizada ni se cierra #5 automáticamente.
+El [PR de demostración #13](https://github.com/VillaforTech/bankpulse/pull/13) demuestra el bloqueo real, separado de la mutación controlada del harness:
+
+1. **Base sana:** [CI 35139056546](https://github.com/VillaforTech/bankpulse/actions/runs/35139056546), commit `b7978d7`, cuatro checks verdes. El benchmark registró 100/100 renders, cero pérdidas/errores y p95 573.567 ms; la reacción al vencimiento real fue 345.201 ms.
+2. **Defecto intencional:** `b78d9a6` elimina únicamente la comparación entre suma de cuotas y total en `SplitSession.close`; las pruebas quedan intactas.
+3. **Tecnología UP, negocio incorrecto:** [CI rojo 35150381217](https://github.com/VillaforTech/bankpulse/actions/runs/35150381217). Docker, analítica, smoke técnico y dashboard Chromium pasan. La prueba registra `[readiness] OK`, HTTP 200 y `COMPLETED` para 60+30 de 100: diferencia 10.00. Las pruebas unitarias también detectan el defecto.
+4. **Bloqueo:** el job `Release gate` falla y GitHub registra `mergeStateStatus: BLOCKED`. La protección exige ese check y el de integración, rama actualizada y una aprobación; ni un revisor ni un administrador pueden convertir checks rojos en un merge normal. No se intentó fusionar la revisión defectuosa.
+5. **Diagnóstico y corrección:** `16389a0` restaura la validación exacta dentro del agregado. Es la única diferencia respecto de la revisión defectuosa; se vuelven a ejecutar las mismas pruebas en el mismo PR.
+
+La [evidencia conservada](evidence/release-gate-2026-09-16/) incluye el diff de la mutación, log de negocio, contenedores, estado bloqueado y protección vigente. Los artefactos completos están en la ejecución enlazada. El estado bloqueado tenía además una revisión humana pendiente; el fallo de los checks obligatorios es un impedimento independiente.
+
+### Correspondencia con el enunciado
+
+| Criterio | Puntos | Evidencia |
+|---|---:|---|
+| Riesgo convertido en prueba computable | 3 | Capacidad, diferencia 10.00, prueba 60+30 y log rojo |
+| Release Gate funcional | 5 | Diagrama, workflow, PR verde #7 y revisión roja de #13 con servicios UP y bloqueo |
+| Diagnóstico y recuperación reproducible | 2 | Diff de una línea, corrección, ejecución posterior y comandos del devcontainer |
+
+El archivo requerido es `docs/deber-01.md`. El enunciado permite elegir la capacidad; el pago duplicado es un ejemplo, no una obligación adicional a Social Split. Se entrega el enlace al repositorio GitHub. Una ejecución local de devcontainer no acredita una prueba en Codespaces ni una reproducción independiente por un compañero. El envío al aula se confirma aparte con su recibo.
 
 | Trabajo | Autor original / PR |
 |---|---|

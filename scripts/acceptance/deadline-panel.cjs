@@ -2,6 +2,7 @@
 const { chromium } = require('playwright');
 const { execFileSync } = require('node:child_process');
 const fs = require('node:fs');
+const base = (process.argv[2] || process.env.BANKPULSE_URL || 'http://localhost:8080').replace(/\/$/, '');
 const { randomUUID } = require('node:crypto');
 (async()=>{
   const browser=await chromium.launch({headless:true});
@@ -10,7 +11,7 @@ const { randomUUID } = require('node:crypto');
   try {
     const page=await browser.newPage({locale:'en-US',viewport:{width:1440,height:1100}});
     async function api(path,data){
-      const response=await page.request.post('http://localhost:8080/api/splits'+path,{data});
+      const response=await page.request.post(base+'/api/splits'+path,{data});
       if(!response.ok())throw new Error('API '+response.status());
       return response.json();
     }

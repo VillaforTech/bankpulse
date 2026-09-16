@@ -50,7 +50,7 @@ def _en_ventana(closed_at: datetime | None, ahora: datetime, ventana_s: int) -> 
     if closed_at is None:
         return False
     delta_s = (ahora - closed_at).total_seconds()
-    return 0 <= delta_s <= ventana_s
+    return 0 < delta_s <= ventana_s
 
 
 def _cohorte_cerradas_en_ventana(sesiones: list[Sesion], ahora: datetime, ventana_s: int) -> list[Sesion]:
@@ -67,10 +67,9 @@ def _suma_cuotas_autorizadas(sesion: Sesion) -> Decimal:
 def _es_cierre_valido(sesion: Sesion) -> bool:
     """Un cierre valido exige: participantes no vacios, cuotas positivas que
     suman EXACTAMENTE totalAmount, todos autorizados y referencias de pago
-    no vacias. Esta es la regla de negocio real (issue #1 debe hacer que el
-    backend la respete); hoy `closeIfAuthorized()` NO la valida, por eso este
-    calculador existe: para poder DETECTAR el falso verde comparando contra
-    lo que la API realmente dejo pasar."""
+    no vacias. Esta es la regla de negocio aplicada por el backend sano; el oraculo
+    independiente detecta su incumplimiento en la imagen mutada y en
+    cualquier regresion futura."""
     participantes = sesion.get("participants", [])
     if not participantes:
         return False

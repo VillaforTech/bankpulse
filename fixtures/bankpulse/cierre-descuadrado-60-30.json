@@ -1,6 +1,6 @@
 {
   "schemaVersion": "1.0.0",
-  "descripcion": "Fixture de referencia para el issue #5: el FALSO VERDE de extremo a extremo. Sesion de Social Split con total 100.00 USD, cerrada con cuotas autorizadas de 60.00 y 30.00 (suman 90.00, descuadre de 10.00). Hoy closeIfAuthorized() SOLO valida que los participantes existan y esten todos autorizados; NO valida que la suma de cuotas sea igual a totalAmount, asi que la API real deja este cierre en status COMPLETED con HTTP 2xx. Esta fixture documenta el resultado ESPERADO de los KPIs de negocio (issue #5), no lo que la API deberia responder (eso es correccion del issue #1).",
+  "descripcion": "Escenario mutado de Social Split: cuotas autorizadas 60.00+30.00 para un total de 100.00 USD. La API sana rechaza el cierre y conserva OPEN. COMPLETED con HTTP 200 solo se observa al eliminar temporalmente la validacion de suma, como en el PR de demostracion #13. Esta fixture permite calcular el incumplimiento historico sin afirmar que el backend sano lo acepta.",
   "sesion": {
     "id": "fixture-descuadrado-60-30",
     "hostMemberId": "MEMBER-FIXTURE-DESCUADRADO",
