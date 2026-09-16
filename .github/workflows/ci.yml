@@ -119,7 +119,7 @@ jobs:
       - name: Execute integrated team acceptance when supplied
         run: |
           if test -d scripts/acceptance; then
-            bash scripts/team-acceptance.sh
+            NODE_PATH=/tmp/live-browser/node_modules bash scripts/team-acceptance.sh
           else
             echo 'FOUNDATION VERIFIED ONLY: domain, Live and acceptance contributions are not integrated.'
           fi

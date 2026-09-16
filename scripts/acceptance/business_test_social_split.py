@@ -4,12 +4,7 @@
 Objetivo: verificar de extremo a extremo (API real, sin mocks) que el
 sistema no reporta "verde" (HTTP 2xx + status COMPLETED) cuando la
 capacidad protegida del negocio ("las cuotas autorizadas deben sumar
-exactamente el total") esta violada. Esta es la prueba que detecta el
-FALSO VERDE descrito en el issue #5: hoy `closeIfAuthorized()` en
-`SplitSession` solo valida que existan participantes y que todos esten
-autorizados; NO valida que la suma de cuotas sea igual a `totalAmount`.
-Esta prueba NO corrige ese defecto (eso es trabajo del issue #1): solo lo
-detecta y falla con evidencia clara.
+exactamente el total") esta violada. La prueba detecta regresiones del contrato de cierre ya corregido en main.
 
 Solo usa la biblioteca estandar de Python (urllib.request, json, time,
 argparse). No requiere `requests` ni ninguna dependencia externa.
@@ -236,7 +231,7 @@ def escenario_falso_verde(base_url: str, resumen: ResumenNegocio) -> None:
                 f"la API dejo cerrar (HTTP {status_close}, status={final.get('status')}) "
                 f"una sesion con descuadre de {descuadre}; la capacidad protegida NO se respeto",
             )
-        elif status_close >= 400 and final.get("status") == "OPEN":
+        elif 400 <= status_close < 500 and final.get("status") == "OPEN":
             resumen.agregar(
                 nombre,
                 True,
@@ -272,7 +267,7 @@ def escenario_sin_consentimiento(base_url: str, resumen: ResumenNegocio) -> None
 
         status_close, _ = _cerrar(base_url, split_id)
         final = _obtener(base_url, split_id)
-        if status_close >= 400 and final.get("status") == "OPEN":
+        if 400 <= status_close < 500 and final.get("status") == "OPEN":
             resumen.agregar(
                 nombre, True, f"cierre sin consentimiento total fue rechazado (HTTP {status_close})"
             )
@@ -326,7 +321,7 @@ def escenario_cierre_repetido(base_url: str, resumen: ResumenNegocio) -> None:
         # Un segundo cierre "sin efecto" puede responder 2xx (idempotente/no-op)
         # o 4xx (rechazado por ya estar cerrado); ambos son aceptables siempre
         # que el estado no cambie ni se dupliquen participantes.
-        if sigue_completed and sin_participantes_extra:
+        if (200 <= status_2 < 300 or 400 <= status_2 < 500) and sigue_completed and sin_participantes_extra:
             resumen.agregar(
                 nombre,
                 True,

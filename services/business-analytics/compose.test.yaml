@@ -23,7 +23,7 @@ services:
       # Accelerates the 120 s production rule so the component test observes both sides.
       ANALYTICS_STALE_OPEN_SECONDS: "3"
     volumes: [analytics-test-data:/data]
-    ports: ["127.0.0.1:18080:8000"]
+    ports: ["127.0.0.1:${ANALYTICS_TEST_PORT:-18080}:8000"]
     depends_on:
       topic: {condition: service_completed_successfully}
     healthcheck:

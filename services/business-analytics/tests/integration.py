@@ -43,9 +43,9 @@ def created(session, at, total="100", currency="USD"):
     )
 
 
-def run(docker):
+def run(docker, project="bankpulse-analytics-test", url="http://127.0.0.1:18080"):
     evidence = {"scope": "isolated analytics component", "checks": []}
-    command = [docker, "compose", "-f", str(ROOT / "compose.test.yaml")]
+    command = [docker, "compose", "-p", project, "-f", str(ROOT / "compose.test.yaml")]
 
     def compose(*args, data=None):
         return subprocess.run(
@@ -59,7 +59,7 @@ def run(docker):
 
     def snapshot():
         with urllib.request.urlopen(
-            "http://127.0.0.1:18080/snapshot", timeout=3
+            url + "/snapshot", timeout=3
         ) as response:
             return json.load(response)
 
@@ -224,6 +224,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--docker", default="docker")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--project", default="bankpulse-analytics-test")
+    parser.add_argument("--url", default="http://127.0.0.1:18080")
     args = parser.parse_args()
-    result = run(args.docker)
+    result = run(args.docker, args.project, args.url)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

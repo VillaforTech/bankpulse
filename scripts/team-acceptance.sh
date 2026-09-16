@@ -9,5 +9,5 @@ done
 python3 scripts/acceptance/business_test_social_split.py --base-url "$base" | tee artifacts/acceptance/business.log
 python3 scripts/acceptance/latency_benchmark.py --base-url "$base" --out artifacts/acceptance/latency.json | tee artifacts/acceptance/latency.log
 python3 scripts/check-panel-evidence.py artifacts/acceptance/latency.json
-# exit 3 (SKIPPED) is a failure under set -e; the earlier team aggregate accepted it.
+# Missing, skipped or failed scenarios block the release gate.
 python3 scripts/acceptance/resilience_checks.py --base-url "$base" | tee artifacts/acceptance/resilience.log
