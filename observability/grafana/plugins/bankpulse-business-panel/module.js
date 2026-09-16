@@ -44,7 +44,8 @@ System.register(['react', '@grafana/data'], function (exports) {
           const revision = Number(row.revision);
           if (revision > Number(latest.current.revision)) latest.current = row;
           // Equal revisions are full heartbeats. Older revisions are ignored.
-          if (revision >= Number(latest.current.revision)) lastArrival.current = Date.now();
+          const arrival = Number(row.Time ?? row.time);
+          if (revision >= Number(latest.current.revision) && Number.isFinite(arrival) && arrival > lastArrival.current) lastArrival.current = arrival;
         }
 
         const row = latest.current;
@@ -67,7 +68,7 @@ System.register(['react', '@grafana/data'], function (exports) {
         if (quality !== 'ACTUAL') value = quality;
         else if (key === 'technical_health') value = Number(row.technical_health) === 1 ? 'UP' : 'DOWN';
         else if (!noSample && row[key] != null) {
-          value = (meta.prefix || '') + Number(row[key]).toLocaleString('es-EC', { maximumFractionDigits: 2 }) + (meta.suffix || '');
+          value = (meta.prefix ? (props.options.currency || 'USD') + ' ' : '') + Number(row[key]).toLocaleString('es-EC', { maximumFractionDigits: 2 }) + (meta.suffix || '');
         }
         const color = quality !== 'ACTUAL' ? '#f2c96d' : noSample ? '#b7b7b7' : alert ? '#ff7373' : '#73d9a6';
         const alertText = key === 'technical_health'

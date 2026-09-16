@@ -123,3 +123,7 @@ docker compose up -d mongo audit-api
 El target de audit-api vuelve a 1 y el mecanismo de outbox puede completar la entrega pendiente.
 
 > cAdvisor depende del acceso al Docker daemon del host. En algunos entornos Codespaces/Docker remotos sus métricas pueden estar limitadas; las métricas Spring Boot/Prometheus siguen funcionando.
+
+## Integrated verification
+
+This branch includes the analytics component from PR #8 and targets `main`. Start the platform with `compose.yaml` and `compose.analytics.yaml`, setting `ANALYTICS_COVERAGE_FROM` to the actual start of a known population. Start Grafana and `grafana-live-adapter` from this directory’s Compose file. CI runs `scripts/analytics-integration.py` against the real producer, then `scripts/live-browser-test.cjs` in Chromium to verify rendering, stale state and recovery without reloading. Results and screenshots are saved under `artifacts/`. This check does not replace the separate 100-operation latency benchmark.
