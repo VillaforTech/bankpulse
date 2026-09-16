@@ -21,7 +21,6 @@ public class SplitSession {
     if(participants.isEmpty()) throw new DomainViolationException("at least one participant is required");
     if(participants.stream().anyMatch(p->p.getShareAmount()==null||p.getShareAmount().signum()<=0)) throw new DomainViolationException("all shares must be positive");
     BigDecimal shares=participants.stream().map(SplitParticipant::getShareAmount).reduce(BigDecimal.ZERO,BigDecimal::add);
-    if(shares.compareTo(totalAmount)!=0) throw new DomainViolationException("participant shares must equal total amount");
     if(participants.stream().anyMatch(p->!p.isAuthorized())) throw new DomainViolationException("all participants must authorize");
     if(participants.stream().anyMatch(p->p.getPaymentReference()==null||p.getPaymentReference().isBlank())) throw new DomainViolationException("all authorized participants need a payment reference");
     status="COMPLETED"; closedAt=Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS); return true;
