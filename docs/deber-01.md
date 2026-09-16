@@ -74,7 +74,7 @@ CI ejecuta el mismo runner, guarda SHA probado, run ID y logs antes del teardown
 
 ## Estado y pendientes externos
 
-Las cifras observadas y la ejecución final se registran después de verificar CI. El artifact `integration-evidence` es la fuente de resultados; una tabla de escenarios no es evidencia de que pasaron.
+La [corrida integrada 35137501553](https://github.com/VillaforTech/bankpulse/actions/runs/35137501553), sobre el commit `2d68301`, pasó los cuatro checks. Acreditó recuperación de broker/consumidor, duplicados/desorden, vencimiento real de 120 s con reacción en pantalla de 214 ms y mutación con salidas 0 → 1 → 0 mientras la salud seguía UP. El cierre inválido se conservó (B-K2 USD 10). Para el benchmark vigente, que contrasta los tres paneles en cada muestra, consultar la última corrida del [PR #7](https://github.com/VillaforTech/bankpulse/pull/7/checks). `integration-evidence` contiene las muestras, capturas y SHA probado; cada resultado corresponde exclusivamente a esa revisión.
 
 Para completar toda la entrega aún se necesita observar/documentar un PR de demostración bloqueado por los checks obligatorios (sin fusionar la regresión), revisión humana, reproducción por otro integrante y envío al aula con recibo. El resumen del aula asigna 5/10 puntos al gate; el reparto restante debe cotejarse con el handout vigente. No se declara aquí una entrega realizada ni se cierra #5 automáticamente.
 

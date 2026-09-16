@@ -4,7 +4,7 @@ BankPulse is a distributed banking platform that explores how payments, premium 
 
 The browser experience on port `8080` has two views: **Customer** presents the product journey, while **Architect** exposes service health, ownership boundaries and operational signals. Both views call the running APIs; the interface is not a static mock.
 
-> **Project status:** the platform foundation and integration branch are green. The team is completing the domain event pipeline, recoverable analytics, Grafana Live panels and end-to-end acceptance harness. A separate reference implementation documents the target behavior without claiming those contributions for the team.
+> **Project status:** this acceptance branch integrates the domain event pipeline, recoverable analytics, Grafana Live panels and end-to-end harness. CI verifies real browser renders, outages and business regression detection; human review is still required. A separate reference implementation documents the target behavior without claiming those contributions for the team.
 
 ## Product experience
 

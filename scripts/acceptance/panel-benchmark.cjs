@@ -9,12 +9,15 @@ const { randomUUID } = require('node:crypto');
 const base = process.argv[2] || 'http://localhost:8080';
 const output = process.argv[3] || 'artifacts/acceptance/latency.json';
 const selector = '[data-bankpulse-panel="integrity_percent"]';
+function database(query) {
+  return execFileSync('docker', ['compose','exec','-T','postgres','sh','-c',
+    'exec psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "$1"','sh',query], {encoding:'utf8'}).trim();
+}
 function completionEvent(id) {
   const sql = `select event_id from social_split.social_split_outbox_events where aggregate_id='${id}' and event_type='SplitCompleted'`;
   // Only generated UUIDs enter this query; credentials remain in the container.
   if (!/^[a-f0-9-]{36}$/.test(id)) throw new Error('Unexpected session id');
-  return execFileSync('docker', ['compose','exec','-T','postgres','sh','-c',
-    'exec psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -Atc "$1"','sh',sql], {encoding:'utf8'}).trim();
+  return database(sql);
 }
 (async () => {
   fs.mkdirSync(path.dirname(output), {recursive:true});
@@ -33,6 +36,13 @@ function completionEvent(id) {
     if (!login.ok()) throw new Error('Grafana login failed');
     await page.goto('http://localhost:3000/d/bankpulse-deber-01');
     await page.waitForFunction(s=>document.querySelector(s)?.dataset.quality==='ACTUAL',selector,{timeout:60000});
+    // Independent B-K3 oracle: existing OPEN sessions; each measured session
+    // closes before rendering and therefore must not enter the OPEN cohort.
+    const openSessions=JSON.parse(database(`select coalesce(json_agg(q),'[]') from (
+      select extract(epoch from s.created_at)*1000+120000 as "deadlineMs",
+        coalesce(sum(case when p.authorized then p.share_amount*100 else 0 end),0) as cents
+      from social_split.split_sessions s left join social_split.split_participants p on p.session_id=s.id
+      where s.status='OPEN' and s.currency='USD' group by s.id) q`));
     for(let i=0;i<100;i++) {
       const sample={index:i,correlationId:randomUUID(),rendered:false,correct:false,latencyMs:10000};
       let start;
@@ -45,17 +55,22 @@ function completionEvent(id) {
         start=performance.now();
         const closed=await api(`/${sid}/close`,{});
         if(closed.status!=='COMPLETED') throw new Error('close did not complete');
-        await page.waitForFunction(({s,b})=>{
+        const renderedHandle=await page.waitForFunction(({s,b,opens})=>{
           const e=document.querySelector(s), gap=document.querySelector('[data-bankpulse-panel="closure_gap"]');
+          const stale=document.querySelector('[data-bankpulse-panel="stale_authorized"]');
+          const expectedCents=opens.filter(x=>Date.now()>Number(x.deadlineMs)).reduce((sum,x)=>sum+Number(x.cents),0);
           return e?.dataset.quality==='ACTUAL' && Number(e.dataset.sample)===Number(b.sample)+1 &&
             e.dataset.eventId!==b.eventId && Number(e.dataset.value)===100 && e.textContent.includes('100%') &&
-            gap?.dataset.quality==='ACTUAL' && Number(gap.dataset.value)===0 && gap.dataset.eventId===e.dataset.eventId;
-        },{s:selector,b:before},{timeout:10000,polling:'raf'});
+            gap?.dataset.quality==='ACTUAL' && Number(gap.dataset.value)===0 && gap.dataset.eventId===e.dataset.eventId && gap.textContent.includes('USD 0') &&
+            stale?.dataset.quality==='ACTUAL' && Math.round(Number(stale.dataset.value)*100)===expectedCents && stale.dataset.eventId===e.dataset.eventId &&
+            {integrity:{...e.dataset},gap:{...gap.dataset},stale:{...stale.dataset},expectedStaleCents:expectedCents};
+        },{s:selector,b:before,opens:openSessions},{timeout:10000,polling:'raf'});
         sample.latencyMs=performance.now()-start;
-        const rendered=await page.locator(selector).evaluate(e=>({...e.dataset}));
+        const panels=await renderedHandle.jsonValue();
+        const rendered=panels.integrity;
         const expectedEventId=completionEvent(sid);
         if(!expectedEventId || rendered.eventId!==expectedEventId) throw new Error('Rendered event does not match persisted completion');
-        Object.assign(sample,{sessionId:sid,eventId:expectedEventId,rendered:true,correct:true,quality:'FRESH',panelQuality:rendered.quality,revision:Number(rendered.revision),closedSample:Number(rendered.sample)});
+        Object.assign(sample,{panels,sessionId:sid,eventId:expectedEventId,rendered:true,correct:true,quality:'FRESH',panelQuality:rendered.quality,revision:Number(rendered.revision),closedSample:Number(rendered.sample)});
         report.observed++;
       } catch(e) {
         sample.latencyMs=Math.max(10000,start?performance.now()-start:0);

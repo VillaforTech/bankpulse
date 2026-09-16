@@ -104,9 +104,6 @@ python -m analytics.replay tests/fixtures/social_split.ndjson \
 
 El replay se niega a sobrescribir una base existente.
 
-## Coordinación pendiente
+## Integración y aceptación
 
-- #1: confirmar y versionar el contrato productor/outbox.
-- #3: conectar snapshot y stream a Grafana Live.
-- #4: aprovisionar topic, volumen, servicio y checks del Release Gate.
-- #5: reutilizar fixture, replay y oráculo para las pruebas E2E y de falso verde.
+El productor/outbox, el topic, el volumen y Grafana Live están integrados en la rama de aceptación. `scripts/team-acceptance.sh` prueba el productor real, fallos del broker/consumidor, duplicados, desorden, temporizadores y renders del panel. Véase [reproducción y evidencia](../../docs/deber-01.md). La revisión y reproducción independiente siguen pendientes.
