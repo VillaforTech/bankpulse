@@ -50,6 +50,8 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Live adapter tests
+        run: python3 -m unittest discover -s services/grafana-live-adapter -p "test_*.py" -v
       - name: Infrastructure regression tests
         run: python3 -m unittest discover -s tests/infrastructure -v
       - uses: actions/setup-java@v4
@@ -99,13 +101,21 @@ jobs:
       - name: Domain and regression smoke tests
         run: bash scripts/smoke-v2.sh
       - name: Start Prometheus and Grafana
-        run: docker compose -f observability/compose.yaml up -d prometheus grafana
+        run: docker compose -f observability/compose.yaml up -d --build prometheus grafana grafana-live-adapter
       - name: Validate observability endpoints
         run: |
           for i in $(seq 1 30); do curl -fsS http://localhost:9090/-/healthy && break || sleep 2; done
           curl -fsS http://localhost:9090/-/healthy
           for i in $(seq 1 30); do curl -fsS http://localhost:3000/api/health && break || sleep 2; done
           curl -fsS http://localhost:3000/api/health | grep -q '"database"'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify live dashboard in Chromium
+        run: |
+          npm install --prefix /tmp/live-browser playwright@1.51.1
+          /tmp/live-browser/node_modules/.bin/playwright install --with-deps chromium
+          NODE_PATH=/tmp/live-browser/node_modules node scripts/live-browser-test.cjs
       - name: Execute integrated team acceptance when supplied
         run: |
           if test -d scripts/acceptance; then

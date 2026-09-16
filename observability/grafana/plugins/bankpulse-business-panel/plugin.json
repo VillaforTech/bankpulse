@@ -1,0 +1,16 @@
+{
+  "type": "panel",
+  "name": "BankPulse Business Live",
+  "id": "bankpulse-business-panel",
+  "info": {
+    "description": "Verified business snapshots with local freshness expiry",
+    "author": {"name": "BankPulse team"},
+    "keywords": ["bankpulse", "business", "live"],
+    "logos": {},
+    "links": [],
+    "screenshots": [],
+    "version": "1.0.0",
+    "updated": "2026-09-16"
+  },
+  "dependencies": {"grafanaDependency": ">=11.6.0", "plugins": []}
+}
