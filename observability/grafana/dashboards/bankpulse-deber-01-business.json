@@ -1,0 +1,88 @@
+{
+  "uid": "bankpulse-deber-01",
+  "title": "BankPulse Deber 01 — Compromisos compartidos en vivo",
+  "schemaVersion": 40,
+  "version": 1,
+  "refresh": "",
+  "time": {"from": "now-15m", "to": "now"},
+  "tags": ["deber-01", "business", "grafana-live"],
+  "panels": [
+    {
+      "id": 10,
+      "title": "Disponibilidad de business-analytics",
+      "description": "Salud técnica desde Prometheus. Un valor 1 no implica que los KPIs de negocio estén sanos.",
+      "type": "stat",
+      "gridPos": {"x": 0, "y": 0, "w": 8, "h": 5},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"refId": "A", "expr": "up{job=\"business-analytics\"}"}],
+      "fieldConfig": {"defaults": {"min": 0, "max": 1, "mappings": [{"type": "value", "options": {"0": {"text": "DOWN", "color": "red"}, "1": {"text": "UP", "color": "green"}}}], "color": {"mode": "thresholds"}}, "overrides": []},
+      "options": {"colorMode": "value", "graphMode": "none", "justifyMode": "auto", "textMode": "auto"}
+    },
+    {
+      "id": 11,
+      "title": "Historial de revisiones confirmadas",
+      "description": "Historial operativo persistido por Prometheus; no sustituye el transporte Grafana Live.",
+      "type": "timeseries",
+      "gridPos": {"x": 8, "y": 0, "w": 16, "h": 5},
+      "datasource": {"type": "prometheus", "uid": "prometheus"},
+      "targets": [{"refId": "A", "expr": "bankpulse_analytics_revision", "legendFormat": "revisión"}],
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []},
+      "options": {"legend": {"displayMode": "list", "placement": "bottom"}}
+    },
+    {
+      "id": 1,
+      "title": "B-K1 · Cierres válidos · cohorte 15 min",
+      "description": "100 × cierres válidos / cierres. Sin cierres: SIN MUESTRA.",
+      "type": "bankpulse-business-panel",
+      "gridPos": {"x": 0, "y": 5, "w": 8, "h": 6},
+      "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+      "targets": [{"refId": "A", "datasource": {"type": "grafana", "uid": "-- Grafana --"}, "queryType": "measurements", "channel": "stream/bankpulse/business"}],
+      "options": {"field": "integrity_percent", "currency": "USD"},
+      "fieldConfig": {"defaults": {"unit": "percent", "decimals": 2, "noValue": "SIN MUESTRA"}, "overrides": []}
+    },
+    {
+      "id": 2,
+      "title": "B-K2 · Descuadre al cierre · USD demo",
+      "description": "Suma de abs(total − cuotas autorizadas), separada por moneda.",
+      "type": "bankpulse-business-panel",
+      "gridPos": {"x": 8, "y": 5, "w": 8, "h": 6},
+      "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+      "targets": [{"refId": "A", "datasource": {"type": "grafana", "uid": "-- Grafana --"}, "queryType": "measurements", "channel": "stream/bankpulse/business"}],
+      "options": {"field": "closure_gap", "currency": "USD"},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 2}, "overrides": []}
+    },
+    {
+      "id": 3,
+      "title": "B-K3 · OPEN >120 s · USD demo",
+      "description": "Cuotas autorizadas de todo el backlog OPEN con edad estrictamente mayor a 120 s.",
+      "type": "bankpulse-business-panel",
+      "gridPos": {"x": 16, "y": 5, "w": 8, "h": 6},
+      "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+      "targets": [{"refId": "A", "datasource": {"type": "grafana", "uid": "-- Grafana --"}, "queryType": "measurements", "channel": "stream/bankpulse/business"}],
+      "options": {"field": "stale_authorized", "currency": "USD"},
+      "fieldConfig": {"defaults": {"unit": "currencyUSD", "decimals": 2}, "overrides": []}
+    },
+    {
+      "id": 4,
+      "title": "Salud técnica · fuente y transporte",
+      "description": "La infraestructura puede estar UP aunque un KPI de negocio esté incumplido.",
+      "type": "bankpulse-business-panel",
+      "gridPos": {"x": 0, "y": 11, "w": 24, "h": 5},
+      "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+      "targets": [{"refId": "A", "datasource": {"type": "grafana", "uid": "-- Grafana --"}, "queryType": "measurements", "channel": "stream/bankpulse/business"}],
+      "options": {"field": "technical_health", "currency": "USD"},
+      "fieldConfig": {"defaults": {"unit": "short"}, "overrides": []}
+    },
+    {
+      "id": 5,
+      "title": "Revisiones completas recibidas por Grafana Live",
+      "description": "Traza de transporte Live; Prometheus conserva salud e historial operativo.",
+      "type": "table",
+      "gridPos": {"x": 0, "y": 16, "w": 24, "h": 10},
+      "datasource": {"type": "grafana", "uid": "-- Grafana --"},
+      "targets": [{"refId": "A", "datasource": {"type": "grafana", "uid": "-- Grafana --"}, "queryType": "measurements", "channel": "stream/bankpulse/business"}],
+      "options": {"showHeader": true, "cellHeight": "sm"},
+      "fieldConfig": {"defaults": {}, "overrides": []}
+    }
+  ]
+}

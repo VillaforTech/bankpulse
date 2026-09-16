@@ -31,6 +31,9 @@ jobs:
           test -f observability/compose.yaml
           test -f observability/prometheus.yml
           test -f observability/grafana/dashboards/bankpulse-overview.json
+          test -f observability/grafana/dashboards/bankpulse-deber-01-business.json
+          test -f observability/grafana/plugins/bankpulse-business-panel/module.js
+          test -f services/grafana-live-adapter/Dockerfile
           test -f docs/architecture/DATA-OWNERSHIP.md
           test -f frontend/index.html
           test -f frontend/app.js
@@ -52,6 +55,8 @@ jobs:
           python-version: '3.12'
       - name: Infrastructure regression tests
         run: python3 -m unittest discover -s tests/infrastructure -v
+      - name: Grafana Live adapter tests
+        run: python3 -m unittest discover -s services/grafana-live-adapter -p 'test_*.py' -v
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
