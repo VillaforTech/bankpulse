@@ -1,0 +1,56 @@
+{
+  "source": "https://github.com/VillaforTech/bankpulse/actions/runs/35158251443",
+  "headSha": "16389a07775064078e1dfbe6eacf58242c19da24",
+  "conclusion": "success",
+  "jobs": [
+    {
+      "name": "Architecture contract",
+      "conclusion": "success",
+      "url": "https://github.com/VillaforTech/bankpulse/actions/runs/35158251443/job/105002714802"
+    },
+    {
+      "name": "Unit and component tests",
+      "conclusion": "success",
+      "url": "https://github.com/VillaforTech/bankpulse/actions/runs/35158251443/job/105002751935"
+    },
+    {
+      "name": "Build, integration and observability",
+      "conclusion": "success",
+      "url": "https://github.com/VillaforTech/bankpulse/actions/runs/35158251443/job/105002751948"
+    },
+    {
+      "name": "Release gate",
+      "conclusion": "success",
+      "url": "https://github.com/VillaforTech/bankpulse/actions/runs/35158251443/job/105004808534"
+    }
+  ],
+  "latency.json": {
+    "observed": 100,
+    "lost": 0,
+    "errors": [],
+    "p95Ms": 415.5384090000007
+  },
+  "deadline.json": {
+    "result": "PASS",
+    "delayMs": 287.21099800000957
+  },
+  "false-green/result.json": {
+    "baseExit": 0,
+    "healthBefore": {
+      "status": "UP",
+      "groups": [
+        "liveness",
+        "readiness"
+      ]
+    },
+    "mutantExit": 1,
+    "healthAfter": {
+      "status": "UP",
+      "groups": [
+        "liveness",
+        "readiness"
+      ]
+    },
+    "correctedExit": 0
+  }
+}
