@@ -11,3 +11,4 @@ creation.log
 artifacts/
 __pycache__/
 *.pyc
+.pytest_cache/

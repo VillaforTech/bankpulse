@@ -165,7 +165,7 @@ def calculate(sessions, now):
     closed = [
         s
         for s in sessions
-        if s["status"] == "COMPLETED" and s["closedAt"] <= now < s["closedAt"] + 900
+        if s["status"] == "COMPLETED" and now - 900 <= s["closedAt"] < now
     ]
     valid = [s for s in closed if valid_close(s)]
     closure_gap = {}

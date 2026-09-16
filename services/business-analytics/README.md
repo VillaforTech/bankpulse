@@ -11,7 +11,7 @@ Procesador independiente para los KPI B-K1, B-K2 y B-K3 del Deber 01. Consume he
 - Inbox idempotente, versiones consecutivas, eventos fuera de orden y checkpoints atómicos en SQLite.
 - Rehidratación tras reinicio y reloj de 200 ms para vencimientos y expiración de ventanas sin tráfico.
 - Estados `ACTUAL`, `DESACTUALIZADO` e `INCOMPLETO`, sin presentar errores como ceros sanos.
-- Historial de snapshots, SSE y métricas Prometheus.
+- Historial acotado de snapshots, SSE y métricas Prometheus.
 
 Relacionado con la asignación [#2](https://github.com/VillaforTech/BANKPULSE-V2.1-LAB2/issues/2).
 
@@ -104,9 +104,10 @@ python -m analytics.replay tests/fixtures/social_split.ndjson \
 
 El replay se niega a sobrescribir una base existente.
 
-## Coordinación pendiente
+## Integración y aceptación
 
-- #1: confirmar y versionar el contrato productor/outbox.
-- #3: conectar snapshot y stream a Grafana Live.
-- #4: aprovisionar topic, volumen, servicio y checks del Release Gate.
-- #5: reutilizar fixture, replay y oráculo para las pruebas E2E y de falso verde.
+El productor/outbox, el topic, el volumen y Grafana Live están integrados en la rama de aceptación. `scripts/team-acceptance.sh` prueba el productor real, fallos del broker/consumidor, duplicados, desorden, temporizadores y renders del panel. Véase [reproducción y evidencia](../../docs/deber-01.md). La revisión y reproducción independiente siguen pendientes.
+
+### Retención de snapshots
+
+Se conservan las últimas 10 000 proyecciones completas (aproximadamente 33 minutos al ritmo de 200 ms). `ANALYTICS_SNAPSHOT_RETENTION` en el entorno del servicio permite cambiar ese número. La poda no elimina sesiones, eventos del inbox ni checkpoints. Un cursor anterior al historial retenido recibe el snapshot completo más reciente; el adaptador registra el salto y reemplaza la vista. Las revisiones siguen aumentando después de reiniciar. SQLite reutiliza las páginas liberadas; la poda no promete reducir inmediatamente un archivo previamente grande.

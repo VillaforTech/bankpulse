@@ -43,9 +43,9 @@ def created(session, at, total="100", currency="USD"):
     )
 
 
-def run(docker):
+def run(docker, project="bankpulse-analytics-test", url="http://127.0.0.1:18080"):
     evidence = {"scope": "isolated analytics component", "checks": []}
-    command = [docker, "compose", "-f", str(ROOT / "compose.test.yaml")]
+    command = [docker, "compose", "-p", project, "-f", str(ROOT / "compose.test.yaml")]
 
     def compose(*args, data=None):
         return subprocess.run(
@@ -59,7 +59,7 @@ def run(docker):
 
     def snapshot():
         with urllib.request.urlopen(
-            "http://127.0.0.1:18080/snapshot", timeout=3
+            url + "/snapshot", timeout=3
         ) as response:
             return json.load(response)
 
@@ -144,7 +144,8 @@ def run(docker):
 
     send(healthy)
     duplicate = until(lambda value: value["diagnostics"]["duplicates"] == len(healthy))
-    assert duplicate["kpis"]["counts"]["sessions"] == 1
+    assert duplicate["kpis"] == good["kpis"], "duplicate delivery changed business totals"
+    assert duplicate["dataRevision"] == good["dataRevision"]
     record("duplicate delivery has no double count", duplicate["diagnostics"])
 
     deadline_start = time.time()
@@ -186,6 +187,9 @@ def run(docker):
 
     revision = overdue["revision"]
     compose("restart", "analytics")
+    # Docker can reassign an ephemeral published port after restart.
+    address = compose("port", "analytics", "8000").stdout.strip()
+    url = "http://127.0.0.1:" + address.rsplit(":", 1)[1]
     restarted = until(
         lambda value: value.get("valid") and value["revision"] > revision, timeout=30
     )
@@ -224,6 +228,8 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--docker", default="docker")
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--project", default="bankpulse-analytics-test")
+    parser.add_argument("--url", default="http://127.0.0.1:18080")
     args = parser.parse_args()
-    result = run(args.docker)
+    result = run(args.docker, args.project, args.url)
     args.output.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")

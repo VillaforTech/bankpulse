@@ -6,7 +6,7 @@ spec=importlib.util.spec_from_file_location('gate',Path('scripts/check-panel-evi
 gate=importlib.util.module_from_spec(spec);spec.loader.exec_module(gate)
 class PanelGateTests(unittest.TestCase):
     def fixture(self):
-        return {'measurementTarget':'grafana-render','requested':100,'observed':100,'lost':0,'errors':[], 'p95Ms':100, 'samples':[{'correlationId':str(i),'rendered':True,'correct':True,'quality':'FRESH','revision':i+1,'latencyMs':100} for i in range(100)]}
+        return {'measurementTarget':'grafana-render','requested':100,'observed':100,'lost':0,'errors':[], 'p95Ms':100, 'samples':[{'correlationId':str(i),'eventId':str(i),'panels':{'integrity':{'quality':'ACTUAL','eventId':str(i),'value':'100'},'gap':{'quality':'ACTUAL','eventId':str(i),'value':'0'},'stale':{'quality':'ACTUAL','eventId':str(i),'value':'60'},'expectedStaleCents':6000},'rendered':True,'correct':True,'quality':'FRESH','revision':i+1,'latencyMs':100} for i in range(100)]}
     def test_complete_evidence_passes(self):gate.verify(self.fixture())
     def test_partial_missing_and_loss_block(self):
         for change in [{'measurementTarget':'api'},{'coberturaParcialPanelPendiente':True},{'lost':1},{'observed':99},{'p95Ms':10}]:
@@ -16,6 +16,13 @@ class PanelGateTests(unittest.TestCase):
         for change in [{'latencyMs':float('nan')},{'quality':'STALE'},{'correct':False},{'correlationId':'1'}]:
             d=self.fixture();d['samples'][0].update(change)
             with self.assertRaises(AssertionError):gate.verify(d)
+
+    def test_incorrect_or_uncorrelated_panel_blocks(self):
+        for name,field,value in [('gap','value','10'),('stale','value','50'),('integrity','value','99'),('stale','quality','DESACTUALIZADO'),('gap','eventId','other')]:
+            with self.subTest(panel=name,field=field):
+                d=self.fixture()
+                d['samples'][0]['panels'][name][field]=value
+                with self.assertRaises(AssertionError):gate.verify(d)
 
 class ProvisionedBusinessPanelTests(unittest.TestCase):
     def setUp(self):

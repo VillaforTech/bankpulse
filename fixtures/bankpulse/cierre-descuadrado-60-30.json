@@ -1,0 +1,39 @@
+{
+  "schemaVersion": "1.0.0",
+  "descripcion": "Escenario mutado de Social Split: cuotas autorizadas 60.00+30.00 para un total de 100.00 USD. La API sana rechaza el cierre y conserva OPEN. COMPLETED con HTTP 200 solo se observa al eliminar temporalmente la validacion de suma, como en el PR de demostracion #13. Esta fixture permite calcular el incumplimiento historico sin afirmar que el backend sano lo acepta.",
+  "sesion": {
+    "id": "fixture-descuadrado-60-30",
+    "hostMemberId": "MEMBER-FIXTURE-DESCUADRADO",
+    "totalAmount": "100.00",
+    "currency": "USD",
+    "status": "COMPLETED",
+    "createdAt": "2026-01-01T12:00:00Z",
+    "closedAt": "2026-01-01T12:05:00Z",
+    "participants": [
+      {
+        "id": "fixture-descuadrado-p1",
+        "memberId": "MEMBER-A",
+        "shareAmount": "60.00",
+        "authorized": true,
+        "paymentReference": "PAY-REF-DESCUADRE-1"
+      },
+      {
+        "id": "fixture-descuadrado-p2",
+        "memberId": "MEMBER-B",
+        "shareAmount": "30.00",
+        "authorized": true,
+        "paymentReference": "PAY-REF-DESCUADRE-2"
+      }
+    ]
+  },
+  "kpisEsperados": {
+    "ventanaSegundosBK1BK2": 900,
+    "edadMinSegundosBK3": 120,
+    "bK1": 0.0,
+    "bK2": {
+      "USD": "10.00"
+    },
+    "bK3": {},
+    "notaFalsoVerde": "HTTP 2xx + status COMPLETED + descuadre de 10.00 unidades: este es el falso verde que scripts/acceptance/business_test_social_split.py debe detectar y fallar."
+  }
+}

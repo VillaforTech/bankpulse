@@ -118,10 +118,13 @@ def test_no_close_is_no_sample():
     assert result["B-K1"]["state"] == "SIN MUESTRA"
 
 
-def test_close_expires_at_exactly_fifteen_minutes():
+def test_close_window_includes_lower_bound_and_excludes_now():
     session = projected(history(close_at=BASE + 5))
     assert calculate([session], BASE + 904.999)["B-K1"]["sample"] == 1
-    assert calculate([session], BASE + 905)["B-K1"]["sample"] == 0
+    assert calculate([session], BASE + 905)["B-K1"]["sample"] == 1
+    assert calculate([session], BASE + 905.001)["B-K1"]["sample"] == 0
+    assert calculate([session], BASE + 5)["B-K1"]["sample"] == 0
+    assert calculate([session], BASE + 5.001)["B-K1"]["sample"] == 1
 
 
 def test_open_authorized_amount_appears_strictly_after_120_seconds():
@@ -249,3 +252,32 @@ def test_fixture_is_reproducible(tmp_path):
     assert result["kpis"]["B-K1"]["value"] == 100
     assert result["kpis"]["B-K3"]["value"] == {"USD": "60"}
     store.close()
+
+
+def test_snapshot_retention_recovers_old_cursor_and_survives_restart(tmp_path):
+    path = str(tmp_path / "retention.sqlite")
+    store = Store(path, snapshot_retention=3)
+    for offset, item in enumerate(history()):
+        store.ingest(item, offset=offset)
+    checkpoint = store.checkpoint(0)
+    for tick in range(10):
+        last = live(store, BASE + 10 + tick)
+    assert store.db.execute("SELECT COUNT(*) FROM snapshots").fetchone()[0] == 3
+    assert [s["revision"] for s in store.updates(7)] == [8, 9, 10]
+    assert store.updates(0) == [last]
+    assert store.updates(10) == []
+    assert store.checkpoint(0) == checkpoint
+    assert last["kpis"]["B-K1"]["sample"] == 1
+    store.close()
+    store = Store(path, snapshot_retention=3)
+    restored = live(store, BASE + 21)
+    assert restored["revision"] == 11
+    assert restored["kpis"] == last["kpis"]
+    assert store.updates(1) == [restored]
+    assert store.checkpoint(0) == checkpoint
+    store.close()
+
+
+def test_snapshot_retention_must_be_positive():
+    with pytest.raises(ValueError, match="must be positive"):
+        Store(":memory:", snapshot_retention=0)

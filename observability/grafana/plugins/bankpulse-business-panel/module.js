@@ -83,6 +83,8 @@ System.register(['react', '@grafana/data'], function (exports) {
           'data-event-id': row.source_event_id || '',
           'data-correlation-id': row.correlation_id || '',
           'data-quality': quality,
+          'data-value': String(row[key] ?? ''),
+          'data-sample': String(sample),
           'data-correct': String(quality === 'ACTUAL' && !noSample)
         },
           React.createElement('div', { style: { color, fontSize: '30px', fontWeight: 650 } }, value),

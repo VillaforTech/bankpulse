@@ -15,8 +15,12 @@ def encode(value):
 
 
 class Store:
-    def __init__(self, path, coverage_from=None, deadline_seconds=None):
+    def __init__(self, path, coverage_from=None, deadline_seconds=None, snapshot_retention=None):
         self.lock = threading.RLock()
+        self.snapshot_retention = int(snapshot_retention if snapshot_retention is not None
+                                      else os.getenv("ANALYTICS_SNAPSHOT_RETENTION", "10000"))
+        if self.snapshot_retention < 1:
+            raise ValueError("ANALYTICS_SNAPSHOT_RETENTION must be positive")
         self.deadline_seconds = float(
             deadline_seconds
             if deadline_seconds is not None
@@ -265,6 +269,9 @@ class Store:
                 "UPDATE snapshots SET body=? WHERE revision=?",
                 (encode(result), cursor.lastrowid),
             )
+            # These are replaceable full projections, not the durable event history.
+            self.db.execute("DELETE FROM snapshots WHERE revision <= ?",
+                            (cursor.lastrowid - self.snapshot_retention,))
             return result
 
     def _latest(self):
@@ -279,6 +286,11 @@ class Store:
 
     def updates(self, after, limit=100):
         with self.lock:
+            oldest = self.db.execute("SELECT MIN(revision) FROM snapshots").fetchone()[0]
+            if oldest is not None and after < oldest - 1:
+                # A slow/reconnecting subscriber can replace its whole view. The
+                # revision gap remains visible to the adapter's recovery counter.
+                return [self._latest()]
             return [
                 json.loads(r[0])
                 for r in self.db.execute(

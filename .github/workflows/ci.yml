@@ -68,6 +68,8 @@ jobs:
             cd services/business-analytics
             pip install -r requirements-test.txt
             python -m pytest tests -q
+            cd ../..
+            python -m pytest tests/kpis -q
           else
             echo 'Analytics not included in this foundation branch; full acceptance remains pending.'
           fi
@@ -116,13 +118,10 @@ jobs:
           npm install --prefix /tmp/live-browser playwright@1.51.1
           /tmp/live-browser/node_modules/.bin/playwright install --with-deps chromium
           NODE_PATH=/tmp/live-browser/node_modules node scripts/live-browser-test.cjs
-      - name: Execute integrated team acceptance when supplied
-        run: |
-          if test -d scripts/acceptance; then
-            bash scripts/team-acceptance.sh
-          else
-            echo 'FOUNDATION VERIFIED ONLY: domain, Live and acceptance contributions are not integrated.'
-          fi
+      - name: Execute mandatory team acceptance
+        env:
+          NODE_PATH: /tmp/live-browser/node_modules
+        run: bash scripts/team-acceptance.sh
       - name: Save run identity and runtime evidence before teardown
         if: always()
         run: |
