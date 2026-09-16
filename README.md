@@ -58,11 +58,15 @@ Requirements: Docker with Compose v2 and about 8 GB available to Docker.
 
 ```bash
 cp .env.example .env
+export ANALYTICS_COVERAGE_FROM="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 COMPOSE_BAKE=false COMPOSE_PARALLEL_LIMIT=2 docker compose up -d --build --wait --wait-timeout 300
+docker compose -f compose.yaml -f compose.analytics.yaml up -d --build --wait business-analytics
 bash scripts/smoke-v2.sh
 ```
 
-Open <http://localhost:8080>. The service ports remain private inside the Compose network.
+Open <http://localhost:8080>. The service ports remain private inside the Compose network. These commands assume a new environment. Keep the original `ANALYTICS_COVERAGE_FROM` when restarting an existing analytics volume; its population start is immutable.
+
+For the full business tests, browser dependencies and false-green demonstration, follow the [acceptance and recovery guide](docs/deber-01.md).
 
 Start the observability stack separately:
 
