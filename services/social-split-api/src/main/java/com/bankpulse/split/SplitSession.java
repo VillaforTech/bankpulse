@@ -11,7 +11,7 @@ public class SplitSession {
   @Column(nullable=false) private long aggregateVersion;
   @OneToMany(mappedBy="session",cascade=CascadeType.ALL,orphanRemoval=true,fetch=FetchType.EAGER) private List<SplitParticipant> participants=new ArrayList<>();
   protected SplitSession(){}
-  public SplitSession(String hostMemberId,BigDecimal totalAmount,String currency){this.hostMemberId=hostMemberId;this.totalAmount=totalAmount;this.currency=currency;this.status="OPEN";this.createdAt=Instant.now();}
+  public SplitSession(String hostMemberId,BigDecimal totalAmount,String currency){this.hostMemberId=hostMemberId;this.totalAmount=totalAmount;this.currency=currency;this.status="OPEN";this.createdAt=Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);}
   public String getId(){return id;} public String getHostMemberId(){return hostMemberId;} public BigDecimal getTotalAmount(){return totalAmount;} public String getCurrency(){return currency;} public String getStatus(){return status;} public Instant getCreatedAt(){return createdAt;} public Instant getClosedAt(){return closedAt;} public long getAggregateVersion(){return aggregateVersion;} public List<SplitParticipant> getParticipants(){return participants;}
   public void advanceVersion(){aggregateVersion++;}
   public void addParticipant(String memberId,BigDecimal share){ensureOpen();participants.add(new SplitParticipant(this,memberId,share));}
@@ -24,7 +24,7 @@ public class SplitSession {
     if(shares.compareTo(totalAmount)!=0) throw new DomainViolationException("participant shares must equal total amount");
     if(participants.stream().anyMatch(p->!p.isAuthorized())) throw new DomainViolationException("all participants must authorize");
     if(participants.stream().anyMatch(p->p.getPaymentReference()==null||p.getPaymentReference().isBlank())) throw new DomainViolationException("all authorized participants need a payment reference");
-    status="COMPLETED"; closedAt=Instant.now(); return true;
+    status="COMPLETED"; closedAt=Instant.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS); return true;
   }
   private void ensureOpen(){if("COMPLETED".equals(status)) throw new CompletedMutationException("completed sessions cannot be changed");}
 }

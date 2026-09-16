@@ -89,6 +89,13 @@ jobs:
         run: |
           curl -fsS http://localhost:8080/ | grep -q "BANKdragon"
           curl -fsS http://localhost:8080/app.js | grep -q "Seat HOLD created"
+      - name: Start persistent business analytics
+        run: |
+          echo "ANALYTICS_COVERAGE_FROM=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      - name: Wait for business analytics
+        run: docker compose -f compose.yaml -f compose.analytics.yaml up -d --build --wait business-analytics
+      - name: Verify real producer and analytics
+        run: python3 scripts/analytics-integration.py
       - name: Domain and regression smoke tests
         run: bash scripts/smoke-v2.sh
       - name: Start Prometheus and Grafana
@@ -133,7 +140,7 @@ jobs:
         run: docker compose -f observability/compose.yaml down -v || true
       - name: Stop platform
         if: always()
-        run: docker compose down -v || true
+        run: docker compose -f compose.yaml -f compose.analytics.yaml down -v || true
 
   release-gate:
     name: Release gate

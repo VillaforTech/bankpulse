@@ -47,4 +47,12 @@ class SplitSessionTest {
   }
 
   private SplitSession session(String total) { return new SplitSession("host", new BigDecimal(total), "USD"); }
+  @org.junit.jupiter.api.Test void timestampsUseDatabasePrecision() {
+    SplitSession session = new SplitSession("host", new java.math.BigDecimal("100"), "USD");
+    org.junit.jupiter.api.Assertions.assertEquals(0, session.getCreatedAt().getNano() % 1000);
+    session.addParticipant("member", new java.math.BigDecimal("100"));
+    session.getParticipants().get(0).authorize("reference");
+    session.closeIfAuthorized();
+    org.junit.jupiter.api.Assertions.assertEquals(0, session.getClosedAt().getNano() % 1000);
+  }
 }
