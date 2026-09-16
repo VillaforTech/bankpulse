@@ -40,6 +40,44 @@ jobs:
           docker compose config --quiet
           docker compose -f observability/compose.yaml config --quiet
 
+  unit:
+    name: Unit and component tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: architecture-contract
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Live adapter tests
+        run: python3 -m unittest discover -s services/grafana-live-adapter -p "test_*.py" -v
+      - name: Infrastructure regression tests
+        run: python3 -m unittest discover -s tests/infrastructure -v
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+      - name: Compile and execute Java tests
+        run: |
+          for pom in services/*/pom.xml; do mvn -B -f "$pom" test; done
+      - name: Test analytics when its component is included
+        run: |
+          if test -f services/business-analytics/requirements-test.txt; then
+            cd services/business-analytics
+            pip install -r requirements-test.txt
+            python -m pytest tests -q
+          else
+            echo 'Analytics not included in this foundation branch; full acceptance remains pending.'
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: unit-evidence
+          path: '**/surefire-reports/*'
+          if-no-files-found: ignore
+
   integration-test:
     name: Build, integration and observability
     runs-on: ubuntu-latest
@@ -53,16 +91,53 @@ jobs:
         run: |
           curl -fsS http://localhost:8080/ | grep -q "BANKdragon"
           curl -fsS http://localhost:8080/app.js | grep -q "Seat HOLD created"
+      - name: Start persistent business analytics
+        run: |
+          echo "ANALYTICS_COVERAGE_FROM=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+      - name: Wait for business analytics
+        run: docker compose -f compose.yaml -f compose.analytics.yaml up -d --build --wait business-analytics
+      - name: Verify real producer and analytics
+        run: python3 scripts/analytics-integration.py
       - name: Domain and regression smoke tests
         run: bash scripts/smoke-v2.sh
       - name: Start Prometheus and Grafana
-        run: docker compose -f observability/compose.yaml up -d prometheus grafana
+        run: docker compose -f observability/compose.yaml up -d --build prometheus grafana grafana-live-adapter
       - name: Validate observability endpoints
         run: |
           for i in $(seq 1 30); do curl -fsS http://localhost:9090/-/healthy && break || sleep 2; done
           curl -fsS http://localhost:9090/-/healthy
           for i in $(seq 1 30); do curl -fsS http://localhost:3000/api/health && break || sleep 2; done
           curl -fsS http://localhost:3000/api/health | grep -q '"database"'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify live dashboard in Chromium
+        run: |
+          npm install --prefix /tmp/live-browser playwright@1.51.1
+          /tmp/live-browser/node_modules/.bin/playwright install --with-deps chromium
+          NODE_PATH=/tmp/live-browser/node_modules node scripts/live-browser-test.cjs
+      - name: Execute integrated team acceptance when supplied
+        run: |
+          if test -d scripts/acceptance; then
+            bash scripts/team-acceptance.sh
+          else
+            echo 'FOUNDATION VERIFIED ONLY: domain, Live and acceptance contributions are not integrated.'
+          fi
+      - name: Save run identity and runtime evidence before teardown
+        if: always()
+        run: |
+          mkdir -p artifacts/runtime
+          git rev-parse HEAD > artifacts/runtime/tested-sha.txt
+          printf '%s\n' "$GITHUB_RUN_ID" > artifacts/runtime/run-id.txt
+          docker compose ps --all > artifacts/runtime/containers.txt
+          docker compose logs --no-color --tail=250 > artifacts/runtime/platform.log 2>&1
+          docker compose -f observability/compose.yaml logs --no-color --tail=100 > artifacts/runtime/observability.log 2>&1 || true
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: integration-evidence
+          path: artifacts/
+          if-no-files-found: error
       - name: Capture evidence on failure
         if: failure()
         run: |
@@ -75,23 +150,24 @@ jobs:
         run: docker compose -f observability/compose.yaml down -v || true
       - name: Stop platform
         if: always()
-        run: docker compose down -v || true
+        run: docker compose -f compose.yaml -f compose.analytics.yaml down -v || true
 
   release-gate:
     name: Release gate
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    needs: [architecture-contract, integration-test]
+    needs: [architecture-contract, unit, integration-test]
     if: ${{ always() }}
     steps:
       - name: Require every CI stage to succeed
         env:
+          UNIT_RESULT: ${{ needs.unit.result }}
           ARCHITECTURE_RESULT: ${{ needs.architecture-contract.result }}
           INTEGRATION_RESULT: ${{ needs.integration-test.result }}
         run: |
           set -euo pipefail
           printf 'Architecture: %s\nIntegration: %s\n' "$ARCHITECTURE_RESULT" "$INTEGRATION_RESULT"
-          if [[ "$ARCHITECTURE_RESULT" != "success" || "$INTEGRATION_RESULT" != "success" ]]; then
+          if [[ "$UNIT_RESULT" != "success" || "$ARCHITECTURE_RESULT" != "success" || "$INTEGRATION_RESULT" != "success" ]]; then
             echo "::error::Release blocked: every required stage must succeed; skipped or cancelled stages do not pass."
             exit 1
           fi

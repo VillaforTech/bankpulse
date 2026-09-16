@@ -8,7 +8,7 @@ target/
 *.zip
 creation.log
 
-# Python del harness de aceptacion (issue #5)
+artifacts/
 __pycache__/
 *.pyc
 .pytest_cache/
