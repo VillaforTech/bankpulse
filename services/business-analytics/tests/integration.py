@@ -220,6 +220,11 @@ def run(docker, project="bankpulse-analytics-test", url="http://127.0.0.1:18080"
         lambda value: value.get("valid") and value["kpis"]["counts"]["sessions"] == 3
     )
     record("out-of-order history repairs", repaired["coverage"])
+    # Copy only this test driver into the disposable component; production images
+    # contain no crash switches. Each case uses its own topic, group and SQLite DB.
+    compose("cp", str(ROOT / "tests" / "crash_recovery.py"), "analytics:/tmp/crash_recovery.py")
+    crash = compose("exec", "-T", "-e", "PYTHONPATH=/app", "analytics", "python", "/tmp/crash_recovery.py")
+    record("deterministic consumer crash boundaries", json.loads(crash.stdout))
     evidence["finishedAt"] = iso(time.time())
     return evidence
 

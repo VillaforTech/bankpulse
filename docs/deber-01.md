@@ -40,6 +40,7 @@ flowchart LR
 | Broker | Crear mientras Redpanda está detenido; outbox pendiente, analítica degradada; recuperar y comprobar entrega | `acceptance/resilience.json` |
 | Consumidor | SIGKILL, nueva operación durante caída, recuperación desde estado persistido sin pérdida | `acceptance/resilience.json` |
 | Componente | Broker real: duplicados, desorden, recuperación de historial, reinicio y vencimiento sin eventos | `acceptance/component-resilience.json` |
+| Límites del checkpoint | Proceso terminado antes de persistir, entre persistencia y ACK y después del ACK; offsets reales de Kafka, reinicio y replay sin duplicados | `acceptance/component-resilience.json` |
 | Live | Adaptador detenido y restaurado; el mismo panel pasa de ACTUAL a DESACTUALIZADO y vuelve | `live/*.png`, `live/result.json` |
 | Deadline en pantalla | Regla real de 120 s, sin nuevas operaciones; suma independiente de compromisos abiertos; reacción ≤1 s | `acceptance/deadline.json`, `deadline.png` |
 | Falso verde | Imagen mutada, API UP, business test rojo, KPI incumplido visible, restauración de imagen y test verde | `acceptance/false-green/` |
@@ -47,7 +48,7 @@ flowchart LR
 
 La latencia exige 100/100 renders, cero pérdidas/errores y p95 ≤1000 ms (rango más cercano, muestra ordenada 95). No se mide solo la respuesta HTTP. `ACTUAL` se normaliza a `FRESH` en el formato de evidencia. Los errores siguen en las muestras con penalización de al menos 10 segundos y siempre bloquean. La carga es secuencial; no demuestra rendimiento bajo concurrencia ni un SLO de producción. La consulta del evento persistido valida la correlación después de detener el reloj.
 
-El temporizador del componente se acelera a 3 segundos en su Compose **aislado**; la regla de producción permanece en 120 segundos. Reinicio abrupto y replay no demuestran exhaustivamente todas las posiciones posibles de un crash. No se atribuye al harness reproducción independiente por un compañero.
+El temporizador del componente se acelera a 3 segundos en su Compose **aislado**; la regla de producción permanece en 120 segundos. El driver `services/business-analytics/tests/crash_recovery.py` ejecuta el consumidor real en procesos separados contra Kafka y SQLite. Fuerza `os._exit(73)` en tres límites, comprueba offsets antes de reiniciar y vuelve a publicar los nueve eventos: el inbox conserva nueve hechos, los KPIs no cambian y el offset final es 18. La inyección existe solo en el driver de pruebas, sin interruptores de fallo en producción. Estas pruebas cubren esos límites concretos, no todas las posibles fallas de hardware. No se atribuye al harness reproducción independiente por un compañero.
 
 La mutación no borra históricos: restaurar el código hace pasar nuevas pruebas, pero el cierre inválido permanece visible en la ventana de 15 minutos. La comprobación espera ese historial rojo. La prueba de mutación devuelve éxito solo si observa el fallo esperado y la recuperación; esto **no equivale** a una ejecución roja del Release Gate ni a observar un PR de regresión bloqueado en GitHub.
 
@@ -55,7 +56,9 @@ La mutación no borra históricos: restaurar el código hace pasar nuevas prueba
 
 Usar un Codespace/devcontainer nuevo o Docker local desechable: el harness detiene broker/consumidor y sustituye temporalmente la imagen de Social Split. No ejecutarlo en un despliegue compartido. Requisitos: Docker Compose, Python 3, Node 22 y recursos de `.devcontainer` (4 CPU, 8 GB RAM). No requiere servicios pagos externos.
 
-Desde la raíz, con volúmenes nuevos:
+Desde la raíz de un Codespace/devcontainer **nuevo**, ejecutar `bash scripts/acceptance/clean-environment.sh`. Conserva SHA, recursos, resultado y logs en `artifacts/runtime/`, incluso si falla; no elimina el entorno ni atribuye la ejecución a un compañero. El script solo debe ejecutarse una vez por entorno.
+
+Los pasos equivalentes, con volúmenes nuevos:
 
 ```bash
 export ANALYTICS_COVERAGE_FROM="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
